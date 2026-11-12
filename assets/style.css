@@ -8,6 +8,7 @@
   --accent: #1f5fa8;
   --merk-bg: #fff8d6;
   --merk-line: #d9b84a;
+  --accent-soft: #eaf1fa;
   --ok: #1e7d3a;
   --ok-bg: #e5f4e8;
   --bad: #b3261e;
@@ -24,6 +25,7 @@
     --accent: #7fb0eb;
     --merk-bg: #2e2a17;
     --merk-line: #8a7630;
+    --accent-soft: #1b2430;
     --ok: #7fd18f;
     --ok-bg: #1c3322;
     --bad: #f0928a;
@@ -39,6 +41,7 @@
   --accent: #7fb0eb;
   --merk-bg: #2e2a17;
   --merk-line: #8a7630;
+  --accent-soft: #1b2430;
   --ok: #7fd18f;
   --ok-bg: #1c3322;
   --bad: #f0928a;
@@ -84,6 +87,7 @@ img, svg, canvas { max-width: 100%; }
 /* Kästen */
 .box { border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; margin: 18px 0; background: var(--soft); }
 .merk { background: var(--merk-bg); border-color: var(--merk-line); border-left-width: 5px; }
+.vorsicht { background: var(--bad-bg); border-color: var(--bad); border-left-width: 5px; }
 .merk::before { content: "Merke"; display: block; font: 700 .8rem system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
 .ziel { background: transparent; }
 .ziel::before { content: "Das kannst du nach diesem Kapitel"; display: block; font: 700 .8rem system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
@@ -206,6 +210,8 @@ footer.site { border-top: 1px solid var(--line); color: var(--muted); font: 13px
   header.site, .pager, button, footer.site { display: none !important; }
   details { border: 0; }
   details > * { display: block !important; }
+  .teil.aufgaben { break-before: page; background: none; }
+  .zur-aufg { display: none; }
 }
 
 /* Netzwerkgraphen (assets/net.js) */
@@ -337,3 +343,25 @@ nav.toc li.t-task, nav.toc li.t-try { padding-left: 1.4em; font-size: .93em; }
 nav.toc li.t-task::before { content: "✎ "; color: var(--accent); }
 nav.toc li.t-try::before { content: "▶ "; color: var(--ok); }
 nav.toc a { text-decoration: none; }
+
+/* Teil A Theorie / Teil B Aufgaben (wie phy-content) */
+.teil-kopf { display: inline-block; font: 700 .74rem system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; padding: 3px 10px; border-radius: 999px; margin: 0 0 6px; }
+.teil.theorie > .teil-kopf { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
+.teil.aufgaben { margin-top: 44px; padding: 14px 18px 18px; border: 2px solid var(--accent); border-radius: 12px; background: var(--accent-soft); scroll-margin-top: 12px; }
+.teil.aufgaben > .teil-kopf { background: var(--accent); color: var(--bg); }
+.teil.aufgaben > h2 { margin-top: 4px; border-top: 0; padding-top: 0; }
+.teil.aufgaben > .box.task, .teil.aufgaben > .box.try { background: var(--bg); }
+.teil.aufgaben .sk-hinweis { font: 14px system-ui, sans-serif; color: var(--muted); }
+.teil.aufgaben > h3 { margin-top: 1.8em; }
+@media (max-width: 480px) { .teil.aufgaben { padding: 12px 10px 14px; margin-left: -6px; margin-right: -6px; } }
+.zur-aufg { font: 600 14px system-ui, sans-serif; margin: -4px 0 14px; }
+.zur-aufg a { text-decoration: none; }
+nav.toc li.t-head { margin-top: 6px; font-weight: 600; }
+nav.toc li.t-head::before { content: "↓ "; color: var(--accent); }
+
+/* RGB-Mischer (assets/farben.js) */
+.mixer { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 14px 0; background: var(--bg); }
+.mixer .mx-sw { display: flex; gap: 10px; margin-bottom: 8px; }
+.mixer .mx-sw .swatch { flex: 1; height: 70px; }
+.mixer .mx-sw > div { flex: 1; }
+.mixer .mx-sw p { margin: 2px 0 0; text-align: center; }

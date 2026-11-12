@@ -12,10 +12,11 @@
         ["03-dualzahlen.html", "Dualzahlen"],
         ["04-codes.html", "Codes"],
         ["05-ascii.html", "ASCII"],
-        ["06-hexadezimal.html", "Hexadezimal"],
-        ["07-rgb.html", "Farben (RGB)"],
-        ["08-bilder.html", "Bilder"],
-        ["09-selbsttest.html", "Selbsttest"],
+        ["06-rgb.html", "Farben (RGB)"],
+        ["07-druckerfarben.html", "Druckerfarben (CMYK)"],
+        ["08-hexadezimal.html", "Hexadezimal"],
+        ["09-bilder.html", "Bilder"],
+        ["10-selbsttest.html", "Selbsttest"],
       ],
     },
     k10: {
@@ -111,10 +112,18 @@
   function structure() {
     const main = document.querySelector("main .wrap");
     if (!main || !section || here === "index.html") return;
-    [...main.querySelectorAll(":scope > h2, :scope > h3")].forEach((h) => {
-      const t = h.textContent.trim();
-      if (TASK_HEAD.test(t)) boxSection(h, "task", "Aufgabe");
-      else if (TRY_HEAD.test(t)) boxSection(h, "try", "Ausprobieren");
+    // Seiten mit <section class="teil theorie"> und <section class="teil aufgaben" id="aufgaben">
+    // werden abschnittsweise gegliedert, sonst die Seite als Ganzes.
+    const teile = [...main.querySelectorAll(":scope > section.teil")];
+    const containers = teile.length ? teile : [main];
+    containers.forEach((c) => {
+      const isAufg = c.classList.contains("aufgaben");
+      [...c.querySelectorAll(":scope > h2, :scope > h3")].forEach((h) => {
+        if (isAufg && h.tagName === "H2") return; // Überschrift „Aufgaben“ selbst nicht einrahmen
+        const t = h.textContent.trim();
+        if (TASK_HEAD.test(t)) boxSection(h, "task", "Aufgabe");
+        else if (TRY_HEAD.test(t)) boxSection(h, "try", "Ausprobieren");
+      });
     });
     // Frei stehende Übungen ebenfalls in Aufgabenkästen
     main.querySelectorAll(".quiz, .cases, .check").forEach((el) => {
@@ -142,22 +151,31 @@
     const chap = h1 && (h1.textContent.match(/^(\d+)\s*·/) || [])[1];
     let k = 0, n = 0;
     const items = [];
-    [...main.children].forEach((el) => {
-      if (el.tagName === "H2") {
-        k++;
-        el.id = el.id || "abschnitt-" + k;
-        if (chap) el.insertAdjacentHTML("afterbegin", `<span class="secno">${chap}.${k}</span> `);
-        items.push(`<li><a href="#${el.id}">${el.textContent.trim()}</a></li>`);
-      } else if (el.classList && el.classList.contains("box") && (el.classList.contains("task") || el.classList.contains("try"))) {
-        const head = el.querySelector(":scope > .tlabel, :scope > .kind");
-        let txt = head ? head.textContent.trim() : "Aufgabe";
-        if (head && head.classList.contains("kind")) {
-          const q = el.querySelector("p:not(.kind)");
-          txt += q ? ": " + q.textContent.trim().replace(/\s+/g, " ").slice(0, 60) + (q.textContent.trim().length > 60 ? " …" : "") : "";
+    containers.forEach((c) => {
+      const isAufg = c.classList.contains("aufgaben");
+      [...c.children].forEach((el) => {
+        if (el.tagName === "H2") {
+          if (isAufg) {
+            el.id = el.id || "teil-" + el.textContent.trim().toLowerCase().replace(/[^a-zäöüß0-9]+/g, "-");
+            const first = c.querySelector(":scope > h2") === el;
+            items.push(`<li class="t-head"><a href="#${first && c.id ? c.id : el.id}">${el.textContent.trim()}</a></li>`);
+            return;
+          }
+          el.id = el.id || "abschnitt-" + (k + 1);
+          k++;
+          if (chap) el.insertAdjacentHTML("afterbegin", `<span class="secno">${chap}.${k}</span> `);
+          items.push(`<li><a href="#${el.id}">${el.textContent.trim()}</a></li>`);
+        } else if (el.classList && el.classList.contains("box") && (el.classList.contains("task") || el.classList.contains("try"))) {
+          const head = el.querySelector(":scope > .tlabel, :scope > .kind");
+          let txt = head ? head.textContent.trim() : "Aufgabe";
+          if (head && head.classList.contains("kind")) {
+            const q = el.querySelector("p:not(.kind)");
+            txt += q ? ": " + q.textContent.trim().replace(/\s+/g, " ").slice(0, 60) + (q.textContent.trim().length > 60 ? " …" : "") : "";
+          }
+          el.id = el.id || "aufgabe-" + (++n);
+          items.push(`<li class="${el.classList.contains("try") ? "t-try" : "t-task"}"><a href="#${el.id}">${txt}</a></li>`);
         }
-        el.id = el.id || "aufgabe-" + (++n);
-        items.push(`<li class="${el.classList.contains("try") ? "t-try" : "t-task"}"><a href="#${el.id}">${txt}</a></li>`);
-      }
+      });
     });
     if (items.length >= 3) {
       const toc = document.createElement("nav");
@@ -166,6 +184,17 @@
       toc.innerHTML = `<div class="kind">Auf dieser Seite</div><ul>${items.join("")}</ul>`;
       const anchor = main.querySelector(".box.ziel") || main.querySelector(".lead") || h1;
       anchor.after(toc);
+    }
+    // Sprungmarke zu Teil B direkt unter der Einleitung
+    const aufg = main.querySelector(":scope > section.teil.aufgaben");
+    const lead = main.querySelector(":scope > .lead");
+    if (aufg && lead && teile[0] !== aufg) {
+      aufg.id = aufg.id || "aufgaben";
+      const cnt = aufg.querySelectorAll(":scope > .box.task").length;
+      const p = document.createElement("p");
+      p.className = "zur-aufg";
+      p.innerHTML = `<a href="#${aufg.id}">↓ Direkt zu den Aufgaben${cnt ? ` (${cnt})` : ""}</a>`;
+      lead.after(p);
     }
   }
 
