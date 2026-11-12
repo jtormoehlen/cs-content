@@ -18,6 +18,14 @@
         ["09-bilder.html", "Bilder"],
         ["10-selbsttest.html", "Selbsttest"],
       ],
+      // Englische Fassung in klasse9/en/ (gleiche Dateinamen)
+      en: {
+        name: "Grade 9",
+        chapters: [
+          "EVA model", "Data & information", "Binary numbers", "Codes", "ASCII",
+          "Colours (RGB)", "Printer colours (CMYK)", "Hexadecimal", "Images", "Self-test",
+        ],
+      },
     },
     k10: {
       name: "Klasse 10",
@@ -53,8 +61,39 @@
   const body = document.body;
   const root = body.dataset.root || ".";
   const here = location.pathname.split("/").pop() || "index.html";
-  const section = SECTIONS[body.dataset.section];
+  const EN = document.documentElement.lang === "en";
+  const base = SECTIONS[body.dataset.section];
+  // Auf englischen Seiten Kapitelnamen der englischen Fassung verwenden
+  const section = base && EN && base.en
+    ? { name: base.en.name, chapters: base.chapters.map(([href], i) => [href, base.en.chapters[i]]), en: base.en }
+    : base;
   const CHAPTERS = section ? section.chapters : [];
+
+  // Texte der Bedienelemente (Deutsch / Englisch)
+  const T = EN ? {
+    brand: "Computer Science", overview: "Overview", chapters: "Chapters", footer: "Learning material Computer Science · based on the lessons of J. Tormöhlen",
+    task: "Task", exercise: "Exercise", testYourself: "Test yourself", tryIt: "Try it", onPage: "On this page",
+    toTasks: "↓ Go straight to the tasks", allRight: "All correct!", right: "Correct!",
+    nOfM: (r, n) => `${r} of ${n} correct, check the fields marked in red again.`,
+    casesNOfM: (r, n) => `${r} of ${n} correct. The explanations will help you.`,
+    wrong: "Not quite, try again.",
+  } : {
+    brand: "Informatik", overview: "Übersicht", chapters: "Kapitel", footer: "Lernmaterial Informatik · Inhalte nach dem Unterricht von J. Tormöhlen",
+    task: "Aufgabe", exercise: "Übung", testYourself: "Teste dich", tryIt: "Ausprobieren", onPage: "Auf dieser Seite",
+    toTasks: "↓ Direkt zu den Aufgaben", allRight: "Alles richtig!", right: "Richtig!",
+    nOfM: (r, n) => `${r} von ${n} richtig, rot markierte Felder noch einmal prüfen.`,
+    casesNOfM: (r, n) => `${r} von ${n} richtig. Die Begründungen helfen dir weiter.`,
+    wrong: "Leider nicht, versuche es noch einmal.",
+  };
+
+  // Sprachumschalter: deutsche Seite klasseX/datei.html ↔ englische Seite klasseX/en/datei.html
+  function langSwitch() {
+    if (!base || !base.en) return "";
+    const href = (EN ? "../" : "en/") + here + location.hash;
+    const label = EN ? "Deutsch" : "English";
+    return `<a class="lang" href="${href}" hreflang="${EN ? "de" : "en"}" lang="${EN ? "de" : "en"}" ` +
+      `title="${EN ? "Diese Seite auf Deutsch" : "This page in English"}"><span aria-hidden="true">${EN ? "DE" : "EN"}</span> ${label}</a>`;
+  }
 
   // ---------- Kopf- und Fußzeile ----------
   function buildHeader() {
@@ -65,15 +104,16 @@
       nav = CHAPTERS.map(([href, label]) =>
         `<a href="${href}"${href === here ? ' aria-current="page"' : ""}>${label}</a>`
       ).join("");
-      nav = `<a href="index.html"${here === "index.html" ? ' aria-current="page"' : ""}>Übersicht</a>` + nav;
+      nav = `<a href="index.html"${here === "index.html" ? ' aria-current="page"' : ""}>${T.overview}</a>` + nav;
     }
-    h.innerHTML = `<div class="wrap"><a class="brand" href="${root}/index.html">Informatik${section ? " · " + section.name : ""}</a>` +
-      (section ? `<nav aria-label="Kapitel ${section.name}">${nav}</nav>` : "") + `</div>`;
+    h.innerHTML = `<div class="wrap"><a class="brand" href="${root}/index.html">${T.brand}${section ? " · " + section.name : ""}</a>` +
+      langSwitch() +
+      (section ? `<nav aria-label="${T.chapters} ${section.name}">${nav}</nav>` : "") + `</div>`;
     body.prepend(h);
 
     const f = document.createElement("footer");
     f.className = "site";
-    f.innerHTML = `<div class="wrap">Lernmaterial Informatik · Inhalte nach dem Unterricht von J. Tormöhlen</div>`;
+    f.innerHTML = `<div class="wrap">${T.footer}</div>`;
     body.append(f);
   }
 
@@ -83,15 +123,15 @@
     const main = document.querySelector("main .wrap") || document.querySelector("main");
     const p = document.createElement("div");
     p.className = "pager";
-    const prev = i > 0 ? CHAPTERS[i - 1] : ["index.html", "Übersicht"];
+    const prev = i > 0 ? CHAPTERS[i - 1] : ["index.html", T.overview];
     const next = CHAPTERS[i + 1];
     p.innerHTML = `<a href="${prev[0]}">← ${prev[1]}</a>` + (next ? `<a href="${next[0]}">${next[1]} →</a>` : "<span></span>");
     main.append(p);
   }
 
   // ---------- Einheitliche Gliederung: Wissen, Ausprobieren, Aufgaben ----------
-  const TASK_HEAD = /^(Aufgabe|Übung|Teste dich|Zusatzaufgabe)/;
-  const TRY_HEAD = /^(Interaktiv|Ausprobieren|Simulation)/;
+  const TASK_HEAD = /^(Aufgabe|Übung|Teste dich|Zusatzaufgabe|Task|Exercise|Test yourself|Extra task)/;
+  const TRY_HEAD = /^(Interaktiv|Ausprobieren|Simulation|Interactive|Try it)/;
 
   // Überschrift samt folgendem Inhalt (bis zur nächsten gleich- oder höherrangigen Überschrift) in einen Kasten legen
   function boxSection(h, cls, label) {
@@ -121,8 +161,8 @@
       [...c.querySelectorAll(":scope > h2, :scope > h3")].forEach((h) => {
         if (isAufg && h.tagName === "H2") return; // Überschrift „Aufgaben“ selbst nicht einrahmen
         const t = h.textContent.trim();
-        if (TASK_HEAD.test(t)) boxSection(h, "task", "Aufgabe");
-        else if (TRY_HEAD.test(t)) boxSection(h, "try", "Ausprobieren");
+        if (TASK_HEAD.test(t)) boxSection(h, "task", T.task);
+        else if (TRY_HEAD.test(t)) boxSection(h, "try", T.tryIt);
       });
     });
     // Frei stehende Übungen ebenfalls in Aufgabenkästen
@@ -130,11 +170,11 @@
       if (el.closest(".task, .try, .sb")) return;
       const box = document.createElement("div");
       box.className = "box task";
-      box.innerHTML = `<div class="kind">${el.classList.contains("quiz") ? "Teste dich" : "Übung"}</div>`;
+      box.innerHTML = `<div class="kind">${el.classList.contains("quiz") ? T.testYourself : T.exercise}</div>`;
       // einleitenden Absatz direkt davor mit in den Kasten nehmen
       const prev = el.previousElementSibling;
       el.before(box);
-      const instr = /[:?]\s*$|^(Klicke|Ordne|Entscheide|Trage|Wähle|Fülle|Prüfe|Gib|Welche|Was |Wie |Kann|Bestimme|Verfolge)/;
+      const instr = /[:?]\s*$|^(Klicke|Ordne|Entscheide|Trage|Wähle|Fülle|Prüfe|Gib|Welche|Was |Wie |Kann|Bestimme|Verfolge|Click|Match|Decide|Enter|Choose|Fill|Check|Give|Which|What |How |Can|Determine|Follow)/;
       if (prev && prev.tagName === "P" && !prev.closest(".box") && instr.test(prev.textContent.trim())) box.append(prev);
       box.append(el);
     });
@@ -143,7 +183,7 @@
       if (b.querySelector(":scope > .kind, :scope > .tlabel")) return;
       const lab = document.createElement("div");
       lab.className = "kind";
-      lab.textContent = "Aufgabe";
+      lab.textContent = T.task;
       b.prepend(lab);
     });
     // Abschnitte nummerieren und Inhaltsverzeichnis erzeugen (Abschnitte mit ihren Aufgaben)
@@ -167,7 +207,7 @@
           items.push(`<li><a href="#${el.id}">${el.textContent.trim()}</a></li>`);
         } else if (el.classList && el.classList.contains("box") && (el.classList.contains("task") || el.classList.contains("try"))) {
           const head = el.querySelector(":scope > .tlabel, :scope > .kind");
-          let txt = head ? head.textContent.trim() : "Aufgabe";
+          let txt = head ? head.textContent.trim() : T.task;
           if (head && head.classList.contains("kind")) {
             const q = el.querySelector("p:not(.kind)");
             txt += q ? ": " + q.textContent.trim().replace(/\s+/g, " ").slice(0, 60) + (q.textContent.trim().length > 60 ? " …" : "") : "";
@@ -180,8 +220,8 @@
     if (items.length >= 3) {
       const toc = document.createElement("nav");
       toc.className = "toc";
-      toc.setAttribute("aria-label", "Auf dieser Seite");
-      toc.innerHTML = `<div class="kind">Auf dieser Seite</div><ul>${items.join("")}</ul>`;
+      toc.setAttribute("aria-label", T.onPage);
+      toc.innerHTML = `<div class="kind">${T.onPage}</div><ul>${items.join("")}</ul>`;
       const anchor = main.querySelector(".box.ziel") || main.querySelector(".lead") || h1;
       anchor.after(toc);
     }
@@ -193,7 +233,7 @@
       const cnt = aufg.querySelectorAll(":scope > .box.task").length;
       const p = document.createElement("p");
       p.className = "zur-aufg";
-      p.innerHTML = `<a href="#${aufg.id}">↓ Direkt zu den Aufgaben${cnt ? ` (${cnt})` : ""}</a>`;
+      p.innerHTML = `<a href="#${aufg.id}">${T.toTasks}${cnt ? ` (${cnt})` : ""}</a>`;
       lead.after(p);
     }
   }
@@ -249,8 +289,8 @@
         if (fb) {
           fb.className = "fb " + (right === inputs.length ? "ok" : "bad");
           fb.textContent = right === inputs.length
-            ? (inputs.length > 1 ? "Alles richtig!" : "Richtig!")
-            : `${right} von ${inputs.length} richtig, rot markierte Felder noch einmal prüfen.`;
+            ? (inputs.length > 1 ? T.allRight : T.right)
+            : T.nOfM(right, inputs.length);
         }
       };
       if (btn) btn.addEventListener("click", run);
@@ -272,11 +312,11 @@
           if (i === correct) {
             b.classList.add("right");
             fb.className = "fb ok";
-            fb.innerHTML = "Richtig! " + (q.dataset.explain || "");
+            fb.innerHTML = T.right + " " + (q.dataset.explain || "");
           } else {
             b.classList.add("wrong");
             fb.className = "fb bad";
-            fb.textContent = "Leider nicht, versuche es noch einmal.";
+            fb.textContent = T.wrong;
           }
           math(fb);
         })
@@ -318,13 +358,13 @@
         });
         if (fb) {
           fb.className = "fb " + (right === cases.length ? "ok" : "bad");
-          fb.textContent = right === cases.length ? "Alles richtig!" : `${right} von ${cases.length} richtig. Die Begründungen helfen dir weiter.`;
+          fb.textContent = right === cases.length ? T.allRight : T.casesNOfM(right, cases.length);
         }
       });
     });
   }
 
-  window.Site = { math, toBin, rand, esc, checkInput, initChecks, initQuiz, initCases };
+  window.Site = { math, toBin, rand, esc, checkInput, initChecks, initQuiz, initCases, EN };
 
   structure();
   buildHeader();

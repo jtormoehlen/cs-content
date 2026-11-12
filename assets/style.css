@@ -71,6 +71,16 @@ header.site .brand { font-weight: 700; }
 header.site nav { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 header.site nav a { color: var(--muted); }
 header.site nav a:hover, header.site nav a[aria-current] { color: var(--accent); }
+/* Sprachumschalter oben rechts (Klasse 9: Deutsch ↔ Englisch) */
+header.site .lang {
+  order: 2; margin-left: auto; align-self: center;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border: 1px solid var(--accent); border-radius: 999px;
+  color: var(--accent); font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+header.site .lang span { font-size: 12px; letter-spacing: .05em; padding: 0 5px; border-radius: 4px; background: var(--accent); color: var(--bg); }
+header.site .lang:hover { background: var(--accent-soft); }
+header.site .wrap:has(.lang) nav { order: 3; flex-basis: 100%; }
 
 main { padding: 28px 0 48px; }
 h1, h2, h3 { font-family: system-ui, sans-serif; line-height: 1.25; }
@@ -91,6 +101,8 @@ img, svg, canvas { max-width: 100%; }
 .merk::before { content: "Merke"; display: block; font: 700 .8rem system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
 .ziel { background: transparent; }
 .ziel::before { content: "Das kannst du nach diesem Kapitel"; display: block; font: 700 .8rem system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+html[lang="en"] .merk::before { content: "Remember"; }
+html[lang="en"] .ziel::before { content: "After this chapter you can"; }
 .box > :first-child { margin-top: 0; }
 .box > :last-child { margin-bottom: 0; }
 .task { background: transparent; }
